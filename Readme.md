@@ -1,0 +1,1 @@
+I used vite to test its advantages over webpack
