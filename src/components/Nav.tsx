@@ -3,7 +3,7 @@ import Logo from '../assets/images/logo.svg'
 import Search from '../assets/images/search.svg'
 import Store from '../assets/images/store.svg'
 
-function Nav() {
+function Nav(): JSX.Element {
     return (<nav className='nav-wrapper'>
         <div className='nav-content'>
             <ul className='list-styled'>
