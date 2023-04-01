@@ -1,8 +1,19 @@
 import React from 'react';
 
-interface SoundSectionProps {}
+interface SoundSectionProps {
+}
 
 const SoundSection: React.FC<SoundSectionProps> = () => {
+    const handleLearnMore = () => {
+        const element = document.querySelector(".display-section")
+        window.scrollTo({
+                top: element?.getBoundingClientRect().bottom,
+                left: 0,
+                behavior: 'smooth'
+            }
+        )
+    }
+
     return (
         <div className="sound-section wrapper">
             <div className="body">
@@ -16,7 +27,7 @@ const SoundSection: React.FC<SoundSectionProps> = () => {
                             <button className="button">Buy</button>
                         </li>
                         <li>
-                            <a className={'link'}>Learn more</a>
+                            <a className={'link'} onClick={handleLearnMore}>Learn more</a>
                         </li>
                     </ul>
 

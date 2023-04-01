@@ -16,12 +16,21 @@ import {
 
 import gsap from 'gsap'
 import {ScrollTrigger} from "gsap/ScrollTrigger";
+import {ICoordinates, scrollAnimation} from "../scroll-config";
 
 //add animation by scrolling
 gsap.registerPlugin(ScrollTrigger)
 
 const WebglViewer = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+    const _scrollAnimation = useCallback(
+        (position: ICoordinates, target: ICoordinates, onUpdate: ()=> void) => {
+            if (position && target && onUpdate)
+            {
+                scrollAnimation(position, target, onUpdate)
+            }
+        },[])
 
     const setupViewer = useCallback(async () => {
         if (canvasRef.current) {
@@ -65,6 +74,10 @@ const WebglViewer = () => {
 
             window.scrollTo(0,0)
             let needsUpdate = true
+            const onUpdate = ()=> {
+                needsUpdate = true
+                viewer.setDirty()
+            }
             //update position and target listener
             viewer.addEventListener('preFrame', ()=> {
                 if(needsUpdate){
@@ -73,6 +86,8 @@ const WebglViewer = () => {
                 }
 
             })
+
+            _scrollAnimation(position, target, onUpdate)
 
             // Load an environment map if not set in the glb file
             // await viewer.scene.setEnvironment(
