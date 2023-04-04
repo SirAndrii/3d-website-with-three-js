@@ -1,8 +1,10 @@
 import React from 'react';
 
-interface DisplaySectionProps {}
+interface DisplaySectionProps {
+    triggerPreview: ()=>void
+}
 
-const DisplaySection: React.FC<DisplaySectionProps> = () => {
+const DisplaySection: React.FC<DisplaySectionProps> = ({triggerPreview}) => {
 
     const handleScrollTop = ()=> {
         window.scroll({
@@ -18,7 +20,7 @@ const DisplaySection: React.FC<DisplaySectionProps> = () => {
       <span className="description">
         A display that's up to 2x brighter in the sun.
       </span>
-      <button className="button">Try me!</button>
+      <button className="button" onClick={triggerPreview}>Try me!</button>
       <button className="back-button" onClick={handleScrollTop}>TOP</button>
     </div>
   );

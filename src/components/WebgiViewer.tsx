@@ -1,17 +1,16 @@
-import React, {useRef, useState, useCallback, useEffect} from 'react';
+import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {
-    ViewerApp,
+    addBasePlugins,
     AssetManagerPlugin,
+    BloomPlugin,
+    CanvasSnipperPlugin,
+    GammaCorrectionPlugin,
     GBufferPlugin,
     ProgressivePlugin,
-    TonemapPlugin,
-    SSRPlugin,
     SSAOPlugin,
-    GammaCorrectionPlugin,
-    addBasePlugins,
-    BloomPlugin,
-    mobileAndTabletCheck,
-    CanvasSnipperPlugin
+    SSRPlugin,
+    TonemapPlugin,
+    ViewerApp
 } from "webgi";
 
 import gsap from 'gsap'
@@ -21,16 +20,50 @@ import {ICoordinates, scrollAnimation} from "../scroll-config";
 //add animation by scrolling
 gsap.registerPlugin(ScrollTrigger)
 
-const WebglViewer = () => {
+const WebglViewer = forwardRef((props, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [viewerRef, setViewerRef] = useState(null)
+    const [targetRef, setTargetRef] = useState(null)
+    const [cameraRef, setCameraRef] = useState(null)
+    const [positionRef, setPositionRef] = useState(null)
+    const canvasContainerRef = useRef(null)
+
+    useImperativeHandle(ref, () => ({
+        triggerPreview() {
+            canvasContainerRef.current.style.pointer = 'all'
+            props.contentRef.current.style.opacity = '0'
+
+            gsap.to(positionRef, {
+                x: 13.04,
+                y: -2.01,
+                z: 2.29,
+                duration: 2,
+                onUpdate: () => {
+                    viewerRef.setDirty();
+                    cameraRef.positionTargetUpdated(true)
+                }
+            })
+
+            gsap.to(targetRef, {
+                x: 0.11,
+                y: 0.0,
+                z: 0.0,
+                duration: 2
+            })
+
+            viewerRef.scene.activeCamera.setCameraOptions({
+                controlsEnabled: true
+            })
+
+        }
+    }))
 
     const _scrollAnimation = useCallback(
-        (position: ICoordinates, target: ICoordinates, onUpdate: ()=> void) => {
-            if (position && target && onUpdate)
-            {
+        (position: ICoordinates, target: ICoordinates, onUpdate: () => void) => {
+            if (position && target && onUpdate) {
                 scrollAnimation(position, target, onUpdate)
             }
-        },[])
+        }, [])
 
     const setupViewer = useCallback(async () => {
         if (canvasRef.current) {
@@ -39,6 +72,8 @@ const WebglViewer = () => {
                 canvas: canvasRef.current,
             })
 
+            setViewerRef(viewer)
+
             // Add some plugins
             const manager = await viewer.addPlugin(AssetManagerPlugin)
 
@@ -46,7 +81,9 @@ const WebglViewer = () => {
             const camera = viewer.scene.activeCamera;
             const {position, target} = camera;
 
-
+            setCameraRef(camera)
+            setPositionRef(position)
+            setTargetRef(target)
 
             // Add plugins individually.
             await viewer.addPlugin(GBufferPlugin)
@@ -72,17 +109,17 @@ const WebglViewer = () => {
             //disable control 3d model by user
             viewer.scene.activeCamera.setCameraOptions({controlsEnabled: false})
 
-            window.scrollTo(0,0)
+            window.scrollTo(0, 0)
             let needsUpdate = true
-            const onUpdate = ()=> {
+            const onUpdate = () => {
                 needsUpdate = true
                 viewer.setDirty()
             }
             //update position and target listener
-            viewer.addEventListener('preFrame', ()=> {
-                if(needsUpdate){
+            viewer.addEventListener('preFrame', () => {
+                if (needsUpdate) {
                     camera.positionTargetUpdated(true)
-                    needsUpdate= false
+                    needsUpdate = false
                 }
 
             })
@@ -99,14 +136,14 @@ const WebglViewer = () => {
 
     }, [])
 
-useEffect(()=>{
-    setupViewer().catch((error)=> console.log(error));
-},[])
+    useEffect(() => {
+        setupViewer().catch((error) => console.log(error));
+    }, [])
     return (
         <div id="webgi-canvas-container">
             <canvas id="webgi-canvas" ref={canvasRef}></canvas>
         </div>
     );
-};
+});
 
 export default WebglViewer;
