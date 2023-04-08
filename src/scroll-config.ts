@@ -3,7 +3,7 @@ import {ScrollTrigger} from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-class ScrollTriggerConfig {
+export class ScrollTriggerConfig {
     trigger: string;
     start: string;
     end: string;
