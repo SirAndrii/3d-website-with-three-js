@@ -1,11 +1,13 @@
-import React, {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
+import React, {forwardRef, RefObject, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {
     addBasePlugins,
     AssetManagerPlugin,
     BloomPlugin,
+    CameraController,
     CanvasSnipperPlugin,
     GammaCorrectionPlugin,
     GBufferPlugin,
+    mobileAndTabletCheck,
     ProgressivePlugin,
     SSAOPlugin,
     SSRPlugin,
@@ -20,24 +22,21 @@ import {ICoordinates, scrollAnimation, ScrollTriggerConfig} from "../scroll-conf
 //add animation by scrolling
 gsap.registerPlugin(ScrollTrigger)
 
-
-
-
-
-const WebglViewer = forwardRef((props, ref) => {
+const WebglViewer = forwardRef((props: WebgiViewerProps, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const [viewerRef, setViewerRef] = useState(null)
-    const [targetRef, setTargetRef] = useState(null)
-    const [cameraRef, setCameraRef] = useState(null)
-    const [positionRef, setPositionRef] = useState(null)
-    const canvasContainerRef = useRef(null)
+    const [viewerRef, setViewerRef] = useState<ViewerApp | null>(null)
+    const [targetRef, setTargetRef] = useState<ICoordinates | null>(null)
+    const [cameraRef, setCameraRef] = useState<CameraController | null>(null)
+    const [positionRef, setPositionRef] = useState<ICoordinates | null>(null)
+    const canvasContainerRef = useRef<HTMLDivElement | null>(null)
     const [previewMode, setPreviewMode] = useState(false)
+    const [isMobile, setIsMobile] = useState<null | Boolean>(null)
 
     useImperativeHandle(ref, () => ({
-        triggerPreview() {
+        triggerPreview: () => {
             setPreviewMode(true)
-            canvasContainerRef.current.style.pointerEvents = 'all'
-            props.contentRef.current.style.opacity = '0'
+            canvasContainerRef.current!.style.pointerEvents = 'all'
+            props.contentRef.current!.style.opacity = '0'
 
             gsap.to(positionRef, {
                 x: 13.04,
@@ -45,8 +44,8 @@ const WebglViewer = forwardRef((props, ref) => {
                 z: 2.29,
                 duration: 2,
                 onUpdate: () => {
-                    viewerRef.setDirty();
-                    cameraRef.positionTargetUpdated(true)
+                    viewerRef!.setDirty();
+                    cameraRef!.positionTargetUpdated(true)
                 }
             })
 
@@ -57,17 +56,17 @@ const WebglViewer = forwardRef((props, ref) => {
                 duration: 2
             })
 
-            viewerRef.scene.activeCamera.setCameraOptions({
+            viewerRef!.scene.activeCamera.setCameraOptions({
                 controlsEnabled: true
             })
 
-        }
+        },
     }))
 
     const _scrollAnimation = useCallback(
-        (position: ICoordinates, target: ICoordinates, onUpdate: () => void) => {
+        (position: ICoordinates, target: ICoordinates, isMobile: boolean, onUpdate: () => void) => {
             if (position && target && onUpdate) {
-                scrollAnimation(position, target, onUpdate)
+                scrollAnimation(position, target, isMobile, onUpdate)
             }
         }, [])
 
@@ -79,6 +78,8 @@ const WebglViewer = forwardRef((props, ref) => {
             })
 
             setViewerRef(viewer)
+            const isMobileOrTablet = mobileAndTabletCheck()
+            setIsMobile(isMobileOrTablet)
 
             // Add some plugins
             const manager = await viewer.addPlugin(AssetManagerPlugin)
@@ -109,13 +110,21 @@ const WebglViewer = forwardRef((props, ref) => {
             viewer.renderer.refreshPipeline()
 
             await manager.addFromPath("scene-black.glb")
+            props.setIsLoading(false)
 
             viewer!.getPlugin(TonemapPlugin)!.config!.clipBackground = true
 
             //disable control 3d model by user
             viewer.scene.activeCamera.setCameraOptions({controlsEnabled: false})
 
+            if (isMobileOrTablet) {
+                position.set(-16.7, 1.17, 11.7);
+                target.set(0, 1.37, 0)
+                props.contentRef.current!.className = 'mobile-or-tablet'
+            }
+
             window.scrollTo(0, 0)
+
             let needsUpdate = true
             const onUpdate = () => {
                 needsUpdate = true
@@ -130,7 +139,7 @@ const WebglViewer = forwardRef((props, ref) => {
 
             })
 
-            _scrollAnimation(position, target, onUpdate)
+            _scrollAnimation(position, target, isMobileOrTablet, onUpdate)
 
             // Load an environment map if not set in the glb file
             // await viewer.scene.setEnvironment(
@@ -146,35 +155,35 @@ const WebglViewer = forwardRef((props, ref) => {
         setupViewer().catch((error) => console.log(error));
     }, [])
 
-    const handleExit = useCallback(()=>{
-        canvasContainerRef.current.style.pointerEvents = 'none'
-        props.contentRef.current.style.opacity = '1'
-        viewerRef.scene.activeCamera.setCameraOptions({
+    const handleExit = useCallback(() => {
+        canvasContainerRef.current!.style.pointerEvents = 'none'
+        props.contentRef.current!.style.opacity = '1'
+        viewerRef!.scene.activeCamera.setCameraOptions({
             controlsEnabled: false
         })
         setPreviewMode(false)
 
         gsap.to(positionRef, {
-            x: 1.56,
-            y: 5.0,
-            z: 0.01,
+            x: !isMobile ? 1.56 : 9.36,
+            y: !isMobile ? 5.0 : 10.95,
+            z: !isMobile ? 0.01 : 0.09,
             scrollTrigger: new ScrollTriggerConfig('.display-section'),
-            onUpdate: ()=> {
-                viewerRef.setDirty()
-                cameraRef.positionTargetUpdated(true)
+            onUpdate: () => {
+                viewerRef!.setDirty()
+                cameraRef!.positionTargetUpdated(true)
             },
         });
 
         gsap.to(targetRef, {
-            x: -0.55,
-            y: 0.32,
-            z: 0.0,
+            x: !isMobile ? -0.55 : -1.62,
+            y: !isMobile ? 0.32 : 0.02,
+            z: !isMobile ? 0.0 : -0.06,
             scrollTrigger: new ScrollTriggerConfig('.display-section')
         })
-    },[canvasContainerRef,viewerRef,positionRef,cameraRef,targetRef])
+    }, [canvasContainerRef, viewerRef, positionRef, cameraRef, targetRef])
 
     return (
-        <div id="webgi-canvas-container">
+        <div id="webgi-canvas-container" ref={canvasContainerRef}>
             <canvas id="webgi-canvas" ref={canvasRef}></canvas>
             {previewMode && (
                 <button className={'button'} onClick={handleExit}>Exit</button>
@@ -184,3 +193,9 @@ const WebglViewer = forwardRef((props, ref) => {
 });
 
 export default WebglViewer;
+
+
+interface WebgiViewerProps {
+    contentRef: RefObject<HTMLDivElement>;
+    setIsLoading: (isLoading:Boolean) => void
+}

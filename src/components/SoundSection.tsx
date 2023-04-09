@@ -20,7 +20,9 @@ const SoundSection: React.FC<SoundSectionProps> = () => {
                 <div className="sound-section-content content">
                     <h2 className="title">New Sound System</h2>
                     <p className="text">Feel the bass.</p>
-                    <span className="description">From $41.62/mo or $999 before trade-in.</span>
+                    <span className="description">
+                        From $41.62/mo or $999 before trade-in.
+                    </span>
 
                     <ul className="links">
                         <li>
